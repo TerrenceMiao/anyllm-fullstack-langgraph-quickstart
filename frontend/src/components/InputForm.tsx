@@ -26,7 +26,7 @@ export const InputForm: React.FC<InputFormProps> = ({
 }) => {
   const [internalInputValue, setInternalInputValue] = useState("");
   const [effort, setEffort] = useState("low");
-  const [model, setModel] = useState("gemma3:27b");
+  const [model, setModel] = useState("gemma3");
 
   const handleInternalSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -137,7 +137,7 @@ export const InputForm: React.FC<InputFormProps> = ({
               </SelectTrigger>
               <SelectContent className="bg-neutral-700 border-neutral-600 text-neutral-300 cursor-pointer">
                 <SelectItem
-                  value="gemma3:27b"
+                  value="gemma3"
                   className="hover:bg-neutral-600 focus:bg-neutral-600 cursor-pointer"
                 >
                   <div className="flex items-center">
