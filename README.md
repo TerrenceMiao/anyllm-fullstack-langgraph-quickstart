@@ -73,11 +73,9 @@ The core of the backend is a LangGraph agent defined in `backend/src/agent/graph
 4.  **Iterative Refinement:** If gaps are found or the information is insufficient, it generates follow-up queries and repeats the web research and reflection steps (up to a configured maximum number of loops).
 5.  **Finalize Answer:** Once the research is deemed sufficient, the agent synthesizes the gathered information into a coherent answer, including citations from the web sources, using a Gemini model.
 
-![Comparison Question](./comparison.png "Comparison Question")
+![Agent Frameworks Comparison](./comparison.png "Agent Frameworks Comparison")
 
-![Gemma's Answer](./gemma.png "Gemma's Answer")
-
-![Gemini's Answer](./gemini.png "Gemini's Answer")
+![LangChain / LangSmith](./langchain.png "LangChain / LangSmith")
 
 ## Deployment
 
