@@ -5,6 +5,51 @@ import { ProcessedEvent } from "@/components/ActivityTimeline";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { ChatMessagesView } from "@/components/ChatMessagesView";
 
+interface Source {
+  label: string;
+  url: string;
+}
+
+// Payloads for specific events/node outputs
+interface GenerateQueryPayload {
+  query_list: string[];
+}
+interface WebResearchPayload {
+  sources_gathered?: Source[];
+}
+interface ReflectionPayload {
+  is_sufficient: boolean;
+  follow_up_queries: string[];
+}
+interface FinalizeAnswerPayload {
+  [key: string]: unknown; // Define more specifically if known
+}
+
+// Combined type for the useStream hook's value
+interface GraphStreamValue {
+  messages: Message[];
+  initial_search_query_count: number;
+  max_research_loops: number;
+  reasoning_model: string;
+
+  // Optional fields for specific events/node outputs
+  generate_query?: GenerateQueryPayload;
+  web_research?: WebResearchPayload;
+  reflection?: ReflectionPayload;
+  finalize_answer?: FinalizeAnswerPayload;
+
+  // Index signature to satisfy the Record<string, unknown> constraint
+  [key: string]:
+    | Message[]
+    | number
+    | string
+    | GenerateQueryPayload
+    | WebResearchPayload
+    | ReflectionPayload
+    | FinalizeAnswerPayload
+    | undefined;
+}
+
 export default function App() {
   const [processedEventsTimeline, setProcessedEventsTimeline] = useState<
     ProcessedEvent[]
@@ -15,61 +60,64 @@ export default function App() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const hasFinalizeEventOccurredRef = useRef(false);
 
-  const thread = useStream<{
-    messages: Message[];
-    initial_search_query_count: number;
-    max_research_loops: number;
-    reasoning_model: string;
-  }>({
+  const thread = useStream<GraphStreamValue>({
     apiUrl: import.meta.env.DEV
       ? "http://localhost:2024"
       : "http://localhost:8123",
     assistantId: "agent",
     messagesKey: "messages",
-    onFinish: (event: any) => {
+    onFinish: (event: unknown) => {
       console.log(event);
     },
-    onUpdateEvent: (event: any) => {
-      let processedEvent: ProcessedEvent | null = null;
-      if (event.generate_query) {
-        processedEvent = {
-          title: "Generating Search Queries",
-          data: event.generate_query.query_list.join(", "),
-        };
-      } else if (event.web_research) {
-        const sources = event.web_research.sources_gathered || [];
-        const numSources = sources.length;
-        const uniqueLabels = [
-          ...new Set(sources.map((s: any) => s.label).filter(Boolean)),
-        ];
-        const exampleLabels = uniqueLabels.slice(0, 3).join(", ");
-        processedEvent = {
-          title: "Web Research",
-          data: `Gathered ${numSources} sources. Related to: ${
-            exampleLabels || "N/A"
-          }.`,
-        };
-      } else if (event.reflection) {
-        processedEvent = {
-          title: "Reflection",
-          data: event.reflection.is_sufficient
-            ? "Search successful, generating final answer."
-            : `Need more information, searching for ${event.reflection.follow_up_queries.join(
-                ", "
-              )}`,
-        };
-      } else if (event.finalize_answer) {
-        processedEvent = {
-          title: "Finalizing Answer",
-          data: "Composing and presenting the final answer.",
-        };
-        hasFinalizeEventOccurredRef.current = true;
-      }
-      if (processedEvent) {
-        setProcessedEventsTimeline((prevEvents) => [
-          ...prevEvents,
-          processedEvent!,
-        ]);
+    onUpdateEvent: (streamData: { [node: string]: Partial<GraphStreamValue> }) => {
+      for (const nodeName in streamData) {
+        const eventPayload = streamData[nodeName];
+        let processedEvent: ProcessedEvent | null = null;
+
+        if (eventPayload && eventPayload.generate_query) {
+          processedEvent = {
+            title: "Generating Search Queries",
+            data: eventPayload.generate_query.query_list.join(", "),
+          };
+        } else if (eventPayload && eventPayload.web_research) {
+          const sources = eventPayload.web_research.sources_gathered || [];
+          const numSources = sources.length;
+          const uniqueLabels = [
+            ...new Set(sources.map((s: Source) => s.label).filter(Boolean)),
+          ];
+          const exampleLabels = uniqueLabels.slice(0, 3).join(", ");
+          processedEvent = {
+            title: "Web Research",
+            data: `Gathered ${numSources} sources. Related to: ${
+              exampleLabels || "N/A"
+            }.`,
+          };
+        } else if (eventPayload && eventPayload.reflection) {
+          processedEvent = {
+            title: "Reflection",
+            data: eventPayload.reflection.is_sufficient
+              ? "Search successful, generating final answer."
+              : `Need more information, searching for ${
+                  Array.isArray(eventPayload.reflection.follow_up_queries) &&
+                  eventPayload.reflection.follow_up_queries.length > 0
+                    ? eventPayload.reflection.follow_up_queries.join(", ")
+                    : "N/A"
+                }`,
+          };
+        } else if (eventPayload && eventPayload.finalize_answer) {
+          processedEvent = {
+            title: "Finalizing Answer",
+            data: "Composing and presenting the final answer.",
+          };
+          hasFinalizeEventOccurredRef.current = true;
+        }
+
+        if (processedEvent) {
+          setProcessedEventsTimeline((prevEvents) => [
+            ...prevEvents,
+            processedEvent!,
+          ]);
+        }
       }
     },
   });
