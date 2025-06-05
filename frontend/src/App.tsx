@@ -56,7 +56,7 @@ export default function App() {
         processedEvent = {
           title: "Web Research",
           data: `Gathered ${numSources} sources. Related to: ${
-            exampleLabels || "N/A"
+            exampleLabels || "''"
           }.`,
         };
       } else if (event.reflection) {
@@ -68,7 +68,7 @@ export default function App() {
                 Array.isArray(event.reflection.follow_up_queries) &&
                 event.reflection.follow_up_queries.length > 0
                   ? event.reflection.follow_up_queries.join(", ")
-                  : "N/A"
+                  : "''"
               }`,
         };
       } else if (event.finalize_answer) {
