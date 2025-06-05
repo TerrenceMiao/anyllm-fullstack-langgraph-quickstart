@@ -29,7 +29,17 @@ export default function App() {
     onFinish: (event: unknown) => {
       console.log(event);
     },
-    onUpdateEvent: (event: any) => {
+    onUpdateEvent: (event: {
+      generate_query?: { query_list: string[] };
+      web_research?: {
+        sources_gathered?: Array<{ label?: string }>
+      };
+      reflection?: {
+        is_sufficient: boolean;
+        follow_up_queries?: string[];
+      };
+      finalize_answer?: boolean;
+    }) => {
       let processedEvent: ProcessedEvent | null = null;
       if (event.generate_query) {
         processedEvent = {
@@ -40,7 +50,7 @@ export default function App() {
         const sources = event.web_research.sources_gathered || [];
         const numSources = sources.length;
         const uniqueLabels = [
-          ...new Set(sources.map((s: any) => s.label).filter(Boolean)),
+          ...new Set(sources.map((s: { label?: string }) => s.label).filter(Boolean)),
         ];
         const exampleLabels = uniqueLabels.slice(0, 3).join(", ");
         processedEvent = {
