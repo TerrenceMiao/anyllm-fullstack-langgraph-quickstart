@@ -26,7 +26,7 @@ export default function App() {
       : "http://localhost:8123",
     assistantId: "agent",
     messagesKey: "messages",
-    onFinish: (event: unknown) => {
+    onFinish: (event) => {
       console.log(event);
     },
     onUpdateEvent: (event: {
